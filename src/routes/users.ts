@@ -3,6 +3,7 @@ import { mockUsers } from '../mockData';
 import { LruCache } from '../cache/LruCache';
 import { User } from '../types/user';
 import { rateLimiter } from '../middleware/rateLimit';
+import { dbQueue } from '../services/DatabaseQueue';
 
 export const userRoutes = Router();
 
@@ -81,14 +82,8 @@ userRoutes.get('/:id', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // 3. Define Fetch Promise Coalescing Logic
-  const fetchPromise = new Promise<User | undefined>((resolve) => {
-    // Simulate DB Latency
-    setTimeout(() => {
-      const user = mockUsers.find((u) => u.id === userId);
-      resolve(user);
-    }, 200); // 200ms delay
-  });
+  // 3. Queue Request logic
+  const fetchPromise = dbQueue.enqueue(userId);
 
   // store promise
   pendingRequests.set(userId, fetchPromise);
