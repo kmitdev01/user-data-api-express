@@ -65,4 +65,12 @@ done
 echo "    Success (200): $success_count (Expected ~5)"
 echo "    Blocked (429): $fail_count (Expected ~7)"
 
+echo -e "\n[5] Global Metrics Verification"
+metrics_output=$(curl -s "$BASE_URL/metrics")
+echo "    $metrics_output"
+
+# Final summary from Metrics API
+req_count=$(echo "$metrics_output" | python3 -c "import sys, json; print(json.load(sys.stdin).get('totalRequests', 0))")
+echo "    Verified System Telemetry: $req_count total requests tracked."
+
 echo -e "\n=== Validation Complete ==="

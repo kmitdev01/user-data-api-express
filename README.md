@@ -28,6 +28,11 @@ A high-performance Node.js/Express service for managing user data with advanced 
 - **Non-Blocking**:
   - Validated to handle lightweight requests (e.g., cached hits or home route) instantaneously even while processing simulated slow DB operations.
 
+### 4. Monitoring & Telemetry
+- **Centralized Metrics**: Real-time tracking of request counts, response durations, and status code distributions.
+- **Middleware Integration**: Automatically captures performance data for every incoming request.
+- **Endpoint Expiry**: Standards-based visibility into system health and cache effectiveness.
+
 ## 🛠️ Setup & Running
 
 ### Prerequisites
@@ -59,5 +64,6 @@ bash validate-backend.sh
 - `GET /users`: List all users.
 - `GET /users/:id`: Get user by ID (Cached).
 - `POST /users`: Create a new user.
-- `GET /users/cache-status`: View cache hits, misses, size, and avg response time.
-- `DELETE /users/cache`: Clear the cache.
+- `GET /metrics`: View global API telemetry (Total requests, Status distribution, Avg response time, Uptime).
+- `GET /users/cache-status`: View detailed cache effectiveness combined with performance metrics.
+- `DELETE /users/cache`: Clear the cache and reset telemetry.

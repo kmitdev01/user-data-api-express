@@ -5,6 +5,8 @@ import { User } from '../types/user';
 import { rateLimiter } from '../middleware/rateLimit';
 import { dbQueue } from '../services/DatabaseQueue';
 
+import { metricsService } from '../services/MetricsService';
+
 export const userRoutes = Router();
 
 // Cache Setup: Capacity 100, TTL 60 seconds
@@ -14,30 +16,24 @@ const userCache = new LruCache<User>(100, 60);
 const pendingRequests = new Map<string, Promise<User | undefined>>();
 
 // Apply rate limiter specifically to routes if needed, or globally in server.ts
-// Here we apply it to all user routes as per requirements implied
 userRoutes.use(rateLimiter);
-
-// Response Time Tracking (Simple in-memory)
-let totalResponseTimeMs = 0;
-let totalRequests = 0;
 
 // 1. Static/Specific Routes FIRST
 // Cache Management Endpoints
 userRoutes.get('/cache-status', (req: Request, res: Response) => {
   const stats = userCache.getStats();
-  const avgResponseTime = totalRequests > 0 ? totalResponseTimeMs / totalRequests : 0;
+  const globalStats = metricsService.getStats();
 
   res.json({
     ...stats,
-    averageResponseTime: avgResponseTime.toFixed(2) + 'ms',
+    averageResponseTime: globalStats.averageResponseTime,
+    uptime: globalStats.uptime
   });
 });
 
 userRoutes.delete('/cache', (req: Request, res: Response) => {
   userCache.clear();
-  // Reset stats too
-  totalResponseTimeMs = 0;
-  totalRequests = 0;
+  metricsService.reset();
   res.status(204).send();
 });
 
@@ -49,14 +45,10 @@ userRoutes.get('/', (req: Request, res: Response) => {
 
 // 2. Dynamic/Wildcard Routes LAST
 userRoutes.get('/:id', async (req: Request, res: Response): Promise<void> => {
-  const start = Date.now();
   const userId = req.params.id;
 
-  // Helper to send response and track time
+  // Helper to send response
   const sendResponse = (data: unknown, status: number = 200) => {
-    const duration = Date.now() - start;
-    totalResponseTimeMs += duration;
-    totalRequests++;
     res.status(status).json(data);
   };
 
