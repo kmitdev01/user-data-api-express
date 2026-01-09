@@ -41,7 +41,6 @@ A high-performance Node.js/Express service for managing user data with advanced 
 
 ### Installation
 ```bash
-cd backend
 pnpm install
 ```
 
