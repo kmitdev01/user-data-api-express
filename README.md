@@ -33,6 +33,11 @@ A high-performance Node.js/Express service for managing user data with advanced 
 - **Middleware Integration**: Automatically captures performance data for every incoming request.
 - **Endpoint Expiry**: Standards-based visibility into system health and cache effectiveness.
 
+### 5. Real-Time Seat Updates (WebSockets)
+- **Live Broadcasting**: Seat status changes are pushed to all connected clients instantly.
+- **Auto-Reconnect**: Frontend hook automatically reconnects on disconnect.
+- **Conflict Prevention**: Prevents double-booking by notifying users when seats become unavailable.
+
 ## 🛠️ Setup & Running
 
 ### Prerequisites
@@ -60,9 +65,58 @@ bash validate-backend.sh
 
 ## 📚 API Endpoints
 
+### User Management
 - `GET /users`: List all users.
 - `GET /users/:id`: Get user by ID (Cached).
 - `POST /users`: Create a new user.
-- `GET /metrics`: View global API telemetry (Total requests, Status distribution, Avg response time, Uptime).
 - `GET /users/cache-status`: View detailed cache effectiveness combined with performance metrics.
 - `DELETE /users/cache`: Clear the cache and reset telemetry.
+
+### Seat Management
+- `GET /seats`: Get all seat statuses (for initial frontend sync).
+- `PATCH /seats/:id`: Update a seat's status (triggers WebSocket broadcast).
+  - **Body**: `{ "status": "available" | "reserved" | "sold" | "held" }`
+  - **Response**: `{ "message": "Seat updated", "seat": { "id": "...", "status": "..." } }`
+- `GET /seats/ws-status`: Check WebSocket connection count.
+
+### Telemetry
+- `GET /metrics`: View global API telemetry (Total requests, Status distribution, Avg response time, Uptime).
+
+## 🔌 WebSocket API
+
+The server upgrades HTTP connections to WebSocket on port **3001**.
+
+### Connection
+```javascript
+const ws = new WebSocket('ws://localhost:3001');
+```
+
+### Message Format (Server → Client)
+```json
+{
+  "type": "SEAT_UPDATE",
+  "seatId": "sec-A-row-B-seat-5",
+  "newStatus": "sold"
+}
+```
+
+### Testing WebSocket
+
+Use `wscat` or a browser to test:
+
+```bash
+# Install wscat if needed
+npm install -g wscat
+
+# Connect to WebSocket
+wscat -c ws://localhost:3001
+
+# In another terminal, trigger a seat update
+curl -X PATCH http://localhost:3001/seats/sec-1-row-A-seat-1 \
+  -H "Content-Type: application/json" \
+  -d '{"status": "sold"}'
+
+# The wscat terminal will receive:
+# {"type":"SEAT_UPDATE","seatId":"sec-1-row-A-seat-1","newStatus":"sold"}
+```
+
